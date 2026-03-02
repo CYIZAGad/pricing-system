@@ -1,0 +1,231 @@
+MEDICINE PRICE SYSTEM - USER FILE INSTRUCTIONS
+=============================================
+
+This document explains how users should prepare files and data before using the system.
+It covers BOTH:
+  1) Uploading price lists to UPDATE the database (Adjust Prices / Manage Products)
+  2) Uploading lists to GET PRICES for medicines (Get Prices)
+
+You can share this .txt file directly with depot users.
+
+------------------------------------------------------------
+1. UPLOADING PRICE LISTS TO UPDATE THE DATABASE
+   (ADJUST PRICES / MANAGE PRODUCTS)
+------------------------------------------------------------
+
+The system accepts THREE ways to update prices:
+  - Excel / CSV file upload
+  - Scanned document (image or PDF) with OCR
+  - Manual entry inside the web form
+
+1.1 EXCEL / CSV FILE FOR PRICE LIST UPLOAD
+-----------------------------------------
+
+RECOMMENDED SIMPLE TEMPLATE
+  - Column A header:  medicine_name
+  - Column B header:  unit_price
+  - Data starts immediately under the header row.
+
+Example:
+  medicine_name                 unit_price
+  ABACOFF SUSP FL/100ML         88800
+  PARACETAMOL 500MG TAB 10S     200
+
+MINIMUM REQUIREMENTS
+  - The file MUST contain at least TWO columns:
+      * one column with the medicine name
+      * one column with the unit price
+  - The file MUST have a header row (column titles).
+  - File type must be:  .xlsx  .xls  or  .csv
+
+ALLOWED HEADER NAMES (MEDICINE COLUMN)
+  The system is flexible and can understand many titles. Any ONE of these is enough:
+    medicine_name
+    medicine
+    medecine name
+    medicene_name
+    product
+    item
+    drug name
+    medicine name
+    name
+    drugs / medicines / products / items
+
+ALLOWED HEADER NAMES (PRICE COLUMN)
+  Any ONE of these is enough:
+    unit_price
+    price
+    unit price
+    unity_price
+    unity price
+    cost
+    rate
+    selling price
+    amount
+    value
+
+OTHER COLUMNS
+  - You MAY include extra columns (code, manufacturer, batch, etc.).
+  - They are ignored for now; only name and price are required.
+
+POSITION OF COLUMNS / HEADER ROW
+  - The medicine and price columns can be in ANY position (A, B, C, …).
+  - The header row does NOT have to be row 1.
+  - However, for BEST results:
+      * Put the header in the FIRST visible row.
+      * Put medicine_name and unit_price close together (e.g. columns A and B or C and D).
+
+HOW UPDATES WORK
+  - For each row in the file:
+      * The system searches ALL existing price lists for that depot.
+      * It compares the medicine_name (case-insensitive, ignoring extra spaces).
+      * If a medicine with the same name exists:
+            → ALL existing records with that name are UPDATED to the new unit_price.
+      * If no medicine with that name exists:
+            → A NEW medicine is inserted with that price.
+  - If the same medicine name appears multiple times in ONE uploaded file:
+      * Only the FIRST occurrence is used.
+      * Later duplicates in the same file are ignored (to avoid random overwrites).
+
+
+1.2 SCANNED DOCUMENT (IMAGE / PDF) FOR PRICE LIST UPLOAD
+-------------------------------------------------------
+
+SUPPORTED FILE TYPES
+  - .png, .jpg, .jpeg, .pdf, .bmp, .tiff, .webp
+
+HOW TO PREPARE THE DOCUMENT
+  - Use a CLEAR, HIGH-QUALITY scan or photo.
+  - Text should be printed or clearly typed if possible (handwriting is harder).
+  - Medicines and prices should be on the same line or very close:
+        Example line:  "ABACOFF SUSP FL/100ML   88800"
+  - Try to keep one medicine per line.
+  - Avoid shadows, blur, or skewed pages.
+
+WHAT THE SYSTEM DOES
+  - Runs OCR to read the text.
+  - Extracts medicine names and (when possible) prices.
+  - Applies fuzzy matching to align names with your database.
+  - Then uses the SAME UPDATE LOGIC as the Excel upload:
+        * Existing names → update price
+        * New names → insert
+
+
+1.3 MANUAL ENTRY FOR PRICE LIST UPDATES
+--------------------------------------
+
+Manual entry is used when the user wants to add or edit a few medicines directly in the web form.
+
+REQUIREMENTS
+  - You must provide:
+      * medicine name
+      * unit price
+  - Names are compared case-insensitively, ignoring spaces at the beginning or end.
+
+UPDATE BEHAVIOUR
+  - If a medicine with the same name already exists anywhere in your depot:
+        → All records with that name are updated to the new price.
+  - If it does not exist:
+        → A new record is created.
+
+
+------------------------------------------------------------
+2. GETTING PRICES (PRICE LOOKUP)
+   (GET PRICES PAGE)
+------------------------------------------------------------
+
+You can send a list of medicines that you want prices for using:
+  - Excel / CSV file upload
+  - Scanned document (image or PDF) with OCR
+  - Manual entry / paste list
+
+2.1 EXCEL / CSV FILE FOR GETTING PRICES
+--------------------------------------
+
+RECOMMENDED SIMPLE TEMPLATE
+  - Column A header:  medicine_name
+  - Each row:        only the medicine name (price is NOT required).
+
+Example:
+  medicine_name
+  ABACOFF SUSP FL/100ML
+  PARACETAMOL 500MG TAB 10S
+  AMOXICILLIN 500MG CAP 15S
+
+MINIMUM REQUIREMENTS
+  - File must be .xlsx, .xls, or .csv.
+  - File must contain at least ONE column that has medicine names.
+  - That column MUST have a header (title).
+
+HOW THE SYSTEM DETECTS THE NAME COLUMN
+  - It searches column titles for words like:
+        medicine, name, product, drug, item
+  - If no title matches, it will use the FIRST column as medicine names.
+
+OTHER COLUMNS
+  - Extra columns (code, quantity, notes, etc.) are allowed and ignored.
+  - Only medicine names are used for matching prices.
+
+MATCHING BEHAVIOUR
+  - For each medicine name:
+      1) Try exact match (case-insensitive, ignoring spaces).
+      2) If not found, try match without numbers (e.g. "AMOXICILLIN CAP").
+      3) If still not found, use similarity (name without numbers, contained in each other).
+  - For each requested name, the system returns:
+      * scanned_name  → the name from your file
+      * medicine_name → the name in the depot database
+      * unit_price    → the matched price
+  - If a medicine cannot be matched, it is listed in "not_found".
+
+
+2.2 SCANNED DOCUMENT (IMAGE / PDF) FOR GETTING PRICES
+-----------------------------------------------------
+
+SUPPORTED FILE TYPES
+  - .png, .jpg, .jpeg, .pdf, .bmp, .tiff, .webp
+
+HOW TO PREPARE THE DOCUMENT
+  - Clear scan or photo, similar to Section 1.2.
+  - One medicine name per line is best.
+  - Prices in the document are optional; the system mainly reads names.
+
+WHAT THE SYSTEM DOES
+  - Uses OCR to read text and extract medicine names.
+  - Runs fuzzy matching to connect them with the depot medicines and prices.
+  - Returns a list of matched medicines with prices, plus names it could not match.
+
+
+2.3 MANUAL ENTRY FOR GETTING PRICES
+-----------------------------------
+
+Manual entry is used when a user wants to quickly check prices for a short list.
+
+RECOMMENDED FORMAT
+  - Type or paste one medicine name per line.
+  - Example:
+        ABACOFF SUSP FL/100ML
+        PARACETAMOL 500MG TAB 10S
+        AMOXICILLIN 500MG CAP 15S
+
+WHAT THE SYSTEM DOES
+  - For each line, tries to match a medicine exactly or by normalized name
+    (similar rules as in 2.1 and 2.2).
+  - Returns matched medicines with prices and a list of names it could not find.
+
+
+------------------------------------------------------------
+3. GENERAL BEST PRACTICES
+------------------------------------------------------------
+
+  - Always keep medicine names consistent between uploads.
+      * Same spelling
+      * Same abbreviations
+      * Same pack description
+  - Avoid mixing very different formats in one document.
+  - Try to keep one medicine per line, especially for scanned documents.
+  - If an upload fails, read the error message carefully:
+      * "Missing required columns" → check header names.
+      * "File is empty"           → check the correct sheet and that data is not hidden.
+  - When in doubt, start with a SMALL TEST FILE (5–10 medicines) to confirm that
+    everything is mapped correctly before uploading thousands of rows.
+

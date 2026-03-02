@@ -1,0 +1,658 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <title>Depot Dashboard - Pharmacy Pricing System</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <style>
+        /* Modern Design Enhancements */
+        :root {
+            --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --success-gradient: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            --sidebar-gradient: linear-gradient(180deg, #1e293b 0%, #0f172a 100%);
+            --card-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            --card-shadow-hover: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        }
+
+        body {
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            min-height: 100vh;
+        }
+
+        /* Modern Sidebar */
+        .sidebar {
+            background: var(--sidebar-gradient);
+            border-right: none;
+            box-shadow: 4px 0 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .sidebar-header {
+            background: rgba(255, 255, 255, 0.05);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 25px 20px;
+        }
+
+        .sidebar-header h1 {
+            color: #ffffff;
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 5px;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        .sidebar-header p {
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 12px;
+        }
+
+        #user-info {
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        #user-name {
+            color: #ffffff;
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        #user-role {
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .nav-item {
+            color: rgba(255, 255, 255, 0.8);
+            padding: 14px 20px;
+            margin: 4px 12px;
+            border-radius: 10px;
+            border-left: none;
+            transition: all 0.3s ease;
+            font-weight: 500;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .nav-item::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            height: 100%;
+            width: 4px;
+            background: #667eea;
+            transform: scaleY(0);
+            transition: transform 0.3s ease;
+        }
+
+        .nav-item:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: #ffffff;
+            transform: translateX(5px);
+        }
+
+        .nav-item:hover::before {
+            transform: scaleY(1);
+        }
+
+        .nav-item.active {
+            background: rgba(102, 126, 234, 0.2);
+            color: #ffffff;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+        }
+
+        .nav-item.active::before {
+            transform: scaleY(1);
+        }
+
+        /* Modern Main Content */
+        .main-content {
+            padding: 40px;
+            background: transparent;
+        }
+
+        .page-header {
+            margin-bottom: 35px;
+        }
+
+        .page-header h2 {
+            font-size: 32px;
+            font-weight: 700;
+            background: var(--primary-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 10px;
+        }
+
+        .page-header p {
+            color: #64748b;
+            font-size: 16px;
+        }
+
+        /* Enhanced Cards */
+        .card {
+            background: #ffffff;
+            border-radius: 16px;
+            padding: 30px;
+            box-shadow: var(--card-shadow);
+            border: 1px solid rgba(0, 0, 0, 0.05);
+            transition: all 0.3s ease;
+            margin-bottom: 25px;
+        }
+
+        .card:hover {
+            box-shadow: var(--card-shadow-hover);
+            transform: translateY(-2px);
+        }
+
+        .card-header {
+            border-bottom: 2px solid #f1f5f9;
+            padding-bottom: 20px;
+            margin-bottom: 25px;
+        }
+
+        .card-header h3 {
+            font-size: 22px;
+            font-weight: 700;
+            color: #1e293b;
+        }
+
+        /* Modern Tabs */
+        .upload-tab-btn, .download-tab-btn {
+            padding: 12px 24px;
+            border: none;
+            background: transparent;
+            cursor: pointer;
+            font-size: 15px;
+            font-weight: 600;
+            color: #64748b;
+            border-bottom: 3px solid transparent;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .upload-tab-btn:hover, .download-tab-btn:hover {
+            color: #667eea;
+            background: rgba(102, 126, 234, 0.05);
+        }
+
+        .upload-tab-btn.active, .download-tab-btn.active {
+            color: #667eea;
+            border-bottom-color: #667eea;
+            background: rgba(102, 126, 234, 0.05);
+        }
+
+        /* Enhanced Forms */
+        .form-group {
+            margin-bottom: 24px;
+        }
+
+        .form-label {
+            font-weight: 600;
+            color: #1e293b;
+            margin-bottom: 10px;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .form-input, textarea.form-input {
+            width: 100%;
+            padding: 14px 16px;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            font-size: 15px;
+            transition: all 0.3s ease;
+            background: #f8fafc;
+        }
+
+        .form-input:focus, textarea.form-input:focus {
+            outline: none;
+            border-color: #667eea;
+            background: #ffffff;
+            box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1);
+            transform: translateY(-1px);
+        }
+
+        /* Modern Buttons */
+        .btn {
+            padding: 14px 28px;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 15px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            border: none;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background: var(--primary-gradient);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-secondary {
+            background: linear-gradient(135deg, #64748b 0%, #475569 100%);
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 15px rgba(100, 116, 139, 0.4);
+        }
+
+        /* Enhanced Tables */
+        .table-container {
+            border-radius: 12px;
+            overflow: hidden;
+            border: 1px solid #e2e8f0;
+        }
+
+        .table {
+            background: #ffffff;
+        }
+
+        .table thead {
+            background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+        }
+
+        .table th {
+            padding: 16px;
+            font-weight: 700;
+            color: #1e293b;
+            text-transform: uppercase;
+            font-size: 12px;
+            letter-spacing: 0.5px;
+            border-bottom: 2px solid #e2e8f0;
+        }
+
+        .table td {
+            padding: 16px;
+            border-bottom: 1px solid #f1f5f9;
+        }
+
+        .table tbody tr {
+            transition: all 0.2s ease;
+        }
+
+        .table tbody tr:hover {
+            background: #f8fafc;
+            transform: scale(1.01);
+        }
+
+        /* File Upload Area */
+        input[type="file"] {
+            padding: 20px;
+            border: 2px dashed #cbd5e1;
+            border-radius: 12px;
+            background: #f8fafc;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        input[type="file"]:hover {
+            border-color: #667eea;
+            background: rgba(102, 126, 234, 0.05);
+        }
+
+        /* Processing Status */
+        #download-processing {
+            background: linear-gradient(135deg, #e0f2fe 0%, #bae6fd 100%);
+            border: 2px solid #3b82f6;
+            border-radius: 16px;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .spinner {
+            border: 4px solid rgba(59, 130, 246, 0.2);
+            border-top-color: #3b82f6;
+            width: 50px;
+            height: 50px;
+        }
+
+        /* Results Container */
+        #download-results-container .card {
+            background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+        }
+
+        /* Summary Box */
+        #download-summary {
+            font-size: 15px;
+            font-weight: 600;
+            color: #1e293b;
+        }
+
+        /* Manual Upload Table */
+        .data-table {
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        }
+
+        .data-table thead {
+            background: var(--primary-gradient);
+            color: white;
+        }
+
+        .data-table th {
+            color: white;
+            border: none;
+        }
+
+        /* Alert Container */
+        #alert-container {
+            animation: slideDown 0.3s ease;
+        }
+
+        @keyframes slideDown {
+            from {
+                transform: translateY(-20px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .main-content {
+                padding: 20px;
+            }
+
+            .page-header h2 {
+                font-size: 24px;
+            }
+
+            .card {
+                padding: 20px;
+            }
+        }
+
+        /* Loading State */
+        .loading {
+            background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+            border-radius: 16px;
+            padding: 60px;
+        }
+
+        /* Back Button Enhancement */
+        .back-button {
+            background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 12px 20px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .back-button:hover {
+            background: var(--primary-gradient);
+            color: white;
+            border-color: #667eea;
+            transform: translateX(-5px);
+        }
+    </style>
+</head>
+<body>
+    <div class="dashboard-layout">
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <h1>🏢 Depot Portal</h1>
+                <p style="font-size: 12px; color: rgba(255,255,255,0.7); margin-top: 5px;">Wholesaler Dashboard</p>
+                <div id="user-info" style="margin-top: 15px; padding-top: 15px; border-top: 1px solid rgba(255,255,255,0.1);">
+                    <p style="font-size: 11px; color: rgba(255,255,255,0.6); margin: 5px 0;">Logged in as:</p>
+                    <p style="font-size: 13px; font-weight: 600; color: white; margin: 0;" id="user-name">-</p>
+                    <p style="font-size: 11px; color: rgba(255,255,255,0.6); margin-top: 5px;" id="user-role">-</p>
+                </div>
+            </div>
+            <nav class="sidebar-nav">
+                <a href="#" class="nav-item" data-page="upload">📤 Adjust Prices</a>
+                <a href="#" class="nav-item" data-page="products">💊 Manage Products</a>
+                <a href="#" class="nav-item active" data-page="download-prices">🔍 Get Prices</a>
+                <a href="#" class="nav-item" onclick="logout()">🚪 Logout</a>
+            </nav>
+        </div>
+        
+        <div class="main-content">
+            <!-- Alert Container -->
+            <div id="alert-container" style="position: fixed; top: 20px; right: 20px; z-index: 10000; max-width: 400px;"></div>
+            
+            <!-- Adjust Prices Page -->
+            <div id="upload-page" class="page">
+                <div class="page-header">
+                    <h2>Adjust Medicine Prices</h2>
+                    <p>Update your price list whenever prices change so pharmacies always see correct prices.</p>
+                </div>
+                
+                <div class="card">
+                    <!-- Upload Options Tabs (File + Manual only) -->
+                    <div style="display: flex; gap: 10px; margin-bottom: 25px; border-bottom: 2px solid #f1f5f9; padding-bottom: 0;">
+                        <button type="button" class="upload-tab-btn active" data-tab="file" onclick="switchUploadTab('file')">
+                            📄 File Upload (CSV/Excel)
+                        </button>
+                        <button type="button" class="upload-tab-btn" data-tab="manual" onclick="switchUploadTab('manual')">
+                            ✏️ Manual Entry
+                        </button>
+                    </div>
+                    
+                    <!-- CSV/Excel Upload Form -->
+                    <div id="file-upload-section">
+                        <form id="upload-form">
+                            <div class="form-group">
+                                <label class="form-label" for="price-file">📄 Select Price List File</label>
+                                <input type="file" id="price-file" class="form-input" accept=".csv,.xlsx,.xls" required>
+                                <small style="color: #64748b; margin-top: 8px; display: block; font-size: 13px;">
+                                    Supported formats: CSV, XLSX, XLS | Maximum size: 16MB
+                                </small>
+                            </div>
+                            <button type="submit" class="btn btn-primary">
+                                📤 Upload & Update Prices
+                            </button>
+                        </form>
+                    </div>
+                    
+                    <!-- Manual Entry Upload Form -->
+                    <div id="manual-upload-section" style="display: none;">
+                        <div class="card" style="background: #f8fafc; border: 2px dashed #cbd5e1;">
+                            <h3 style="margin-top: 0; color: #1e293b;">Enter Medicine Prices Manually</h3>
+                            <p style="color: #64748b; margin-bottom: 25px; font-size: 14px;">
+                                Add medicine names and prices in the table below. You can add or remove rows as needed.
+                            </p>
+                            
+                            <div style="overflow-x: auto; margin-bottom: 25px; border-radius: 12px;">
+                                <table class="data-table" id="manual-upload-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Medicine Name</th>
+                                            <th>Price (RWF)</th>
+                                            <th>Expiry Date</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="manual-upload-tbody">
+                                        <!-- Rows will be added here -->
+                                    </tbody>
+                                </table>
+                            </div>
+                            
+                            <div style="display: flex; gap: 12px;">
+                                <button type="button" class="btn btn-secondary" onclick="addManualRow()">➕ Add Row</button>
+                                <button type="button" class="btn btn-primary" onclick="submitManualUpload()">✅ Save Prices</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Products Page -->
+            <div id="products-page" class="page hidden">
+                <a href="#" class="back-button" onclick="showPage('upload'); document.querySelector('.nav-item[data-page=&quot;upload&quot;]').click(); return false;">
+                    ← Back to Adjust Prices
+                </a>
+                <div class="page-header">
+                    <h2>Manage Products & Prices</h2>
+                    <p>View and manage your medicine catalog and prices</p>
+                </div>
+                
+                <div class="card">
+                    <div class="card-header">
+                        <h3>Your Products</h3>
+                        <div style="display: flex; gap: 12px;">
+                            <input type="text" id="product-search" class="form-input" placeholder="🔍 Search medicines..." style="width: 300px;">
+                            <button class="btn btn-primary" onclick="searchProducts()">Search</button>
+                        </div>
+                    </div>
+                    <div id="products-list" class="loading">
+                        <div class="spinner"></div>
+                        <p>Loading products...</p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Get Prices Page -->
+            <div id="download-prices-page" class="page hidden">
+                <div class="page-header">
+                    <h2>Get Prices</h2>
+                    <p>Upload a file with medicine names to get their current prices from your database</p>
+                </div>
+                
+                <div class="card">
+                    <!-- Download Prices Options Tabs -->
+                    <div style="display: flex; gap: 10px; margin-bottom: 25px; border-bottom: 2px solid #f1f5f9; padding-bottom: 0;">
+                        <button type="button" class="download-tab-btn active" data-tab="file" onclick="switchDownloadTab('file')">
+                            📄 File Upload (CSV/Excel)
+                        </button>
+                        <button type="button" class="download-tab-btn" data-tab="ocr" onclick="switchDownloadTab('ocr')">
+                            📷 Scan Image/PDF (OCR)
+                        </button>
+                        <button type="button" class="download-tab-btn" data-tab="manual" onclick="switchDownloadTab('manual')">
+                            ✏️ Manual Entry
+                        </button>
+                    </div>
+                    
+                    <!-- File Upload Section -->
+                    <div id="download-file-section">
+                        <form id="download-prices-form">
+                            <div class="form-group">
+                                <label class="form-label" for="names-file">📄 Upload File with Medicine Names</label>
+                                <input type="file" id="names-file" class="form-input" accept=".csv,.xlsx,.xls" required>
+                                <small style="color: #64748b; margin-top: 8px; display: block; font-size: 13px;">
+                                    Supported formats: CSV, XLSX, XLS | Maximum size: 16MB
+                                </small>
+                            </div>
+                            <button type="submit" class="btn btn-primary">
+                                🔍 Get Prices
+                            </button>
+                        </form>
+                    </div>
+                    
+                    <!-- OCR Upload Section -->
+                    <div id="download-ocr-section" style="display: none;">
+                        <form id="download-prices-ocr-form">
+                            <div class="form-group">
+                                <label class="form-label" for="download-ocr-file">📷 Select Image or PDF File</label>
+                                <input type="file" id="download-ocr-file" class="form-input" accept=".png,.jpg,.jpeg,.pdf,.bmp,.tiff,.webp" required>
+                                <small style="color: #64748b; margin-top: 8px; display: block; font-size: 13px;">
+                                    Supported: PNG, JPG, JPEG, PDF, BMP, TIFF, WEBP | Maximum size: 16MB<br>
+                                    ✍️ Works with typed and handwritten text
+                                </small>
+                            </div>
+                            <button type="submit" class="btn btn-primary">
+                                🔍 Scan & Get Prices
+                            </button>
+                        </form>
+                    </div>
+                    
+                    <!-- Manual Entry Section -->
+                    <div id="download-manual-section" style="display: none;">
+                        <div class="card" style="background: #f8fafc; border: 2px dashed #cbd5e1;">
+                            <h3 style="margin-top: 0; color: #1e293b;">Enter Medicine Names</h3>
+                            <p style="color: #64748b; margin-bottom: 20px; font-size: 14px;">
+                                Paste or type medicine names (one per line or comma-separated). Click "Get Prices" to retrieve their prices.
+                            </p>
+                            
+                            <div class="form-group">
+                                <label class="form-label" for="manual-medicine-names">💊 Medicine Names</label>
+                                <textarea id="manual-medicine-names" class="form-input" rows="10" 
+                                    placeholder="Enter medicine names, one per line or separated by commas:&#10;Paracetamol 500mg&#10;Amoxicillin 250mg&#10;Ibuprofen 400mg"></textarea>
+                                <small style="color: #64748b; margin-top: 8px; display: block; font-size: 13px;">
+                                    💡 Tip: You can paste a list of medicine names from any source
+                                </small>
+                            </div>
+                            
+                            <button type="button" class="btn btn-primary" onclick="getManualPrices()">
+                                🔍 Get Prices
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Processing Status -->
+                    <div id="download-processing" style="display: none; padding: 20px; background: #e0f2fe; border-radius: 8px; margin-top: 20px; text-align: center;">
+                        <div class="spinner"></div>
+                        <p style="margin-top: 10px; color: var(--primary-color); font-weight: 600;">Processing file and matching prices... Please wait.</p>
+                    </div>
+                    
+                    <!-- Results Table -->
+                    <div id="download-results-container" style="display: none; margin-top: 30px;">
+                        <div class="card">
+                            <div class="card-header">
+                                <h3>📋 Matched Medicines with Prices</h3>
+                                <div style="display: flex; gap: 10px; align-items: center;">
+                                    <button class="btn btn-primary" onclick="downloadPricesCSV()">⬇️ Download CSV</button>
+                                    <button class="btn btn-secondary" onclick="downloadPricesExcel()">⬇️ Download Excel</button>
+                                    <button class="btn btn-secondary" onclick="downloadPricesPDF()">⬇️ Download PDF</button>
+                                </div>
+                            </div>
+                            
+                            <div style="margin-bottom: 20px; padding: 16px; background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%); border-radius: 12px; border-left: 4px solid #3b82f6;">
+                                <strong style="color: #1e40af;">📊 Summary:</strong>
+                                <span id="download-summary" style="margin-left: 10px;"></span>
+                            </div>
+                            
+                            <div class="table-container" style="max-height: 600px; overflow-y: auto;">
+                                <table class="table" id="download-results-table">
+                                    <thead style="position: sticky; top: 0; background: white; z-index: 10;">
+                                        <tr>
+                                            <th>#</th>
+                                            <th>Scanned Name</th>
+                                            <th>Matched Medicine Name</th>
+                                            <th>Unit Price</th>
+                                            <th>Expiry Date</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="download-results-tbody">
+                                        <!-- Rows will be added here -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script src="/static/js/auth.js"></script>
+    <script src="/static/js/depot.js"></script>
+</body>
+</html>
