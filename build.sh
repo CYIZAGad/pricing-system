@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# build.sh — Render build script
+# build.sh Ã¢â‚¬â€ Render build script
 # Installs system packages and Python dependencies
 
 set -o errexit  # exit on error
