@@ -11,6 +11,7 @@ echo "=== Upgrading pip ==="
 pip install --upgrade pip setuptools wheel
 
 echo "=== Installing Python dependencies ==="
+pip install --prefer-binary "numpy>=1.26,<2.0"
 pip install --prefer-binary -r requirements.txt
 
 echo "=== Build complete ==="
