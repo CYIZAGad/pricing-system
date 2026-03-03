@@ -1,0 +1,31 @@
+# render.yaml — Render Infrastructure-as-Code Blueprint
+# https://render.com/docs/blueprint-spec
+
+services:
+  - type: web
+    name: pricing-system
+    runtime: python
+    buildCommand: "./build.sh"
+    startCommand: "gunicorn wsgi:app --config gunicorn.conf.py"
+    envVars:
+      - key: FLASK_ENV
+        value: production
+      - key: SECRET_KEY
+        generateValue: true
+      - key: JWT_SECRET_KEY
+        generateValue: true
+      - key: PYTHON_VERSION
+        value: "3.11.11"
+      - key: CENTRAL_DB_HOST
+        sync: false
+      - key: CENTRAL_DB_PORT
+        value: "5432"
+      - key: CENTRAL_DB_NAME
+        value: pricing_central
+      - key: CENTRAL_DB_USER
+        sync: false
+      - key: CENTRAL_DB_PASSWORD
+        sync: false
+      - key: CORS_ORIGINS
+        sync: false
+    healthCheckPath: /health
