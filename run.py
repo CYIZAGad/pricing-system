@@ -12,8 +12,9 @@ import sys
 _log_level = os.environ.get('LOG_LEVEL', 'INFO').upper()
 _handlers = [logging.StreamHandler(sys.stdout)]
 
-# In production, also log to a rotating file (if writable)
-if os.environ.get('FLASK_ENV') == 'production':
+# On Render/cloud the filesystem is ephemeral — log to stdout only.
+# File logging is only used in local production setups.
+if os.environ.get('FLASK_ENV') == 'production' and not os.environ.get('RENDER'):
     try:
         from logging.handlers import RotatingFileHandler
         _fh = RotatingFileHandler('app.log', maxBytes=5_000_000, backupCount=3)

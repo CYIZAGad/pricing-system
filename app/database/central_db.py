@@ -26,8 +26,11 @@ class CentralDB:
                 cls._engine = create_engine(
                     uri,
                     pool_pre_ping=True,
-                    pool_size=10,
-                    max_overflow=20,
+                    pool_size=5,
+                    max_overflow=10,
+                    pool_recycle=300,
+                    pool_timeout=10,
+                    connect_args={'connect_timeout': 10},
                     echo=False
                 )
                 cls._session_factory = scoped_session(
