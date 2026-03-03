@@ -65,6 +65,13 @@ class Config:
     @staticmethod
     def get_central_db_uri():
         """Get central database connection URI"""
+        # Support Render's DATABASE_URL (or any single connection string)
+        database_url = os.environ.get('DATABASE_URL')
+        if database_url:
+            # Render uses 'postgres://' but SQLAlchemy 2.x requires 'postgresql://'
+            if database_url.startswith('postgres://'):
+                database_url = database_url.replace('postgres://', 'postgresql://', 1)
+            return database_url
         return f"postgresql://{Config.CENTRAL_DB_USER}:{Config.CENTRAL_DB_PASSWORD}@{Config.CENTRAL_DB_HOST}:{Config.CENTRAL_DB_PORT}/{Config.CENTRAL_DB_NAME}"
     
     @staticmethod

@@ -36,10 +36,11 @@ def audit_middleware():
 
 def log_request(response):
     """Log request after response is generated"""
-    # Skip audit for health checks and static files
-    if request.path.startswith('/static') or request.path == '/health':
+    # Skip audit for health checks, static files, and non-API routes
+    if request.path.startswith('/static') or request.path == '/health' or request.path == '/':
         return response
     
+    session = None
     try:
         session = CentralDB.get_session()
         session.execute(text("""
@@ -61,14 +62,18 @@ def log_request(response):
             })
         })
         session.commit()
-        session.close()
     except Exception as e:
-        logger.error(f"Audit logging failed: {e}")
+        logger.warning(f"Audit logging failed (non-fatal): {e}")
         try:
             if session:
                 session.rollback()
+        except Exception:
+            pass
+    finally:
+        try:
+            if session:
                 session.close()
-        except:
+        except Exception:
             pass
     
     return response
