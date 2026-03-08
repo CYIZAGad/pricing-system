@@ -21,7 +21,8 @@ class TenantDatabaseCreator:
             'host': Config.PG_ADMIN_HOST,
             'port': Config.CENTRAL_DB_PORT,
             'user': Config.PG_ADMIN_USER,
-            'password': Config.PG_ADMIN_PASSWORD
+            'password': Config.PG_ADMIN_PASSWORD,
+            'dbname': Config.CENTRAL_DB_NAME
         }
     
     def sanitize_db_name(self, name):
