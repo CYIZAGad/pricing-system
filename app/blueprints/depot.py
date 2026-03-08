@@ -1017,6 +1017,138 @@ def get_medicines():
         return jsonify({'error': 'Failed to get medicines', 'message': str(e)}), 500
 
 
+@depot_bp.route('/export-all-medicines', methods=['GET'])
+@require_auth
+@require_role('depot')
+def export_all_medicines():
+    """Export all medicines as CSV, Excel, or PDF with depot name in filename"""
+    try:
+        from flask import send_file
+        import io
+        
+        fmt = request.args.get('format', 'csv').lower()
+        tenant_id = request.current_user.get('tenant_id')
+        if not tenant_id:
+            return jsonify({'error': 'User not associated with a tenant'}), 400
+        
+        # Get tenant info (for depot/business name)
+        session = CentralDB.get_session()
+        tenant_result = session.execute(
+            text("SELECT database_name, business_name FROM tenants WHERE id = :tenant_id"),
+            {'tenant_id': tenant_id}
+        )
+        tenant = tenant_result.fetchone()
+        if not tenant:
+            session.close()
+            return jsonify({'error': 'Tenant not found'}), 404
+        session.close()
+        
+        tenant_db_name = tenant.database_name
+        depot_name = tenant.business_name or 'depot'
+        safe_name = re.sub(r'[^\w\s-]', '', depot_name).strip().replace(' ', '_')
+        
+        # Get ALL medicines (no pagination)
+        tenant_session = TenantDBManager.get_session(tenant_db_name)
+        result = tenant_session.execute(
+            text("""
+                SELECT m.medicine_name, m.unit_price, m.expiry_date
+                FROM medicines m
+                INNER JOIN price_lists pl ON m.price_list_id = pl.id
+                WHERE pl.tenant_id = :tenant_id
+                ORDER BY m.medicine_name
+            """),
+            {'tenant_id': tenant_id}
+        )
+        medicines = result.fetchall()
+        tenant_session.close()
+        
+        if not medicines:
+            return jsonify({'error': 'No medicines to export'}), 404
+        
+        date_str = datetime.now().strftime("%Y%m%d")
+        
+        if fmt == 'csv':
+            output = io.StringIO()
+            output.write('Medicine Name,Unit Price,Expiry Date\n')
+            for m in medicines:
+                exp = m.expiry_date.isoformat() if m.expiry_date else ''
+                output.write(f'"{m.medicine_name}",{float(m.unit_price):.2f},{exp}\n')
+            mem = io.BytesIO(output.getvalue().encode('utf-8'))
+            mem.seek(0)
+            return send_file(mem, mimetype='text/csv', as_attachment=True,
+                             download_name=f'{safe_name}_prices_{date_str}.csv')
+        
+        elif fmt == 'excel':
+            from openpyxl import Workbook
+            from openpyxl.styles import Font, Alignment
+            wb = Workbook()
+            ws = wb.active
+            ws.title = "Medicine Prices"
+            headers = ['Medicine Name', 'Unit Price', 'Expiry Date']
+            ws.append(headers)
+            for cell in ws[1]:
+                cell.font = Font(bold=True, size=12)
+                cell.alignment = Alignment(horizontal='center', vertical='center')
+            for m in medicines:
+                exp = m.expiry_date.isoformat() if m.expiry_date else ''
+                ws.append([m.medicine_name, float(m.unit_price), exp])
+            ws.column_dimensions['A'].width = 40
+            ws.column_dimensions['B'].width = 15
+            ws.column_dimensions['C'].width = 15
+            buf = io.BytesIO()
+            wb.save(buf)
+            buf.seek(0)
+            return send_file(buf,
+                             mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                             as_attachment=True,
+                             download_name=f'{safe_name}_prices_{date_str}.xlsx')
+        
+        elif fmt == 'pdf':
+            from reportlab.lib.pagesizes import A4
+            from reportlab.lib import colors
+            from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+            from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
+            from reportlab.lib.units import inch
+            buf = io.BytesIO()
+            doc = SimpleDocTemplate(buf, pagesize=A4, topMargin=0.5*inch, bottomMargin=0.5*inch)
+            elements = []
+            styles = getSampleStyleSheet()
+            title_style = ParagraphStyle('T', parent=styles['Heading1'], fontSize=18,
+                                         textColor=colors.HexColor('#1e40af'), spaceAfter=30, alignment=1)
+            elements.append(Paragraph(f"{depot_name} — Medicine Price List", title_style))
+            elements.append(Spacer(1, 0.2*inch))
+            table_data = [['Medicine Name', 'Unit Price (RWF)', 'Expiry Date']]
+            for m in medicines:
+                exp = m.expiry_date.isoformat() if m.expiry_date else ''
+                table_data.append([m.medicine_name, f"{int(round(float(m.unit_price)))}", exp])
+            t = Table(table_data, colWidths=[3.5*inch, 1.5*inch, 1.5*inch])
+            t.setStyle(TableStyle([
+                ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#3b82f6')),
+                ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+                ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+                ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+                ('FONTSIZE', (0, 0), (-1, 0), 12),
+                ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+                ('TOPPADDING', (0, 0), (-1, 0), 12),
+                ('FONTNAME', (0, 1), (-1, -1), 'Helvetica'),
+                ('FONTSIZE', (0, 1), (-1, -1), 10),
+                ('GRID', (0, 0), (-1, -1), 1, colors.grey),
+                ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.HexColor('#f0f9ff')]),
+                ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+            ]))
+            elements.append(t)
+            doc.build(elements)
+            buf.seek(0)
+            return send_file(buf, mimetype='application/pdf', as_attachment=True,
+                             download_name=f'{safe_name}_prices_{date_str}.pdf')
+        else:
+            return jsonify({'error': 'Invalid format. Use csv, excel, or pdf'}), 400
+    
+    except Exception as e:
+        logger.error(f"Export medicines error: {e}", exc_info=True)
+        return jsonify({'error': 'Export failed', 'message': str(e)}), 500
+
+
 @depot_bp.route('/upload-history', methods=['GET'])
 @require_auth
 @require_role('depot')
@@ -1470,7 +1602,7 @@ def download_prices():
             # First try exact match (case-insensitive)
             result = tenant_session.execute(
                 text("""
-                    SELECT m.id, m.medicine_name, m.unit_price
+                    SELECT m.id, m.medicine_name, m.unit_price, m.expiry_date
                     FROM medicines m
                     INNER JOIN price_lists pl ON m.price_list_id = pl.id
                     WHERE pl.tenant_id = :tenant_id 
@@ -1492,7 +1624,7 @@ def download_prices():
                 # Get all medicines and match manually
                 all_medicines_result = tenant_session.execute(
                     text("""
-                        SELECT m.id, m.medicine_name, m.unit_price, pl.activated_at
+                        SELECT m.id, m.medicine_name, m.unit_price, m.expiry_date, pl.activated_at
                         FROM medicines m
                         INNER JOIN price_lists pl ON m.price_list_id = pl.id
                         WHERE pl.tenant_id = :tenant_id 
@@ -1522,20 +1654,18 @@ def download_prices():
                     medicine = best_match
             
             if medicine:
+                expiry_date_str = medicine.expiry_date.isoformat() if hasattr(medicine, 'expiry_date') and medicine.expiry_date else None
                 matched_medicines.append({
                     'id': str(medicine.id),
                     'scanned_name': name_clean,
                     'medicine_name': medicine.medicine_name,
-                    'unit_price': float(medicine.unit_price)
+                    'unit_price': float(medicine.unit_price),
+                    'expiry_date': expiry_date_str
                 })
             else:
                 not_found_names.append(name_clean)
         
         tenant_session.close()
-        
-        # Update medicines table to only contain names and prices
-        # This means we'll keep the existing structure but ensure we only return name and price
-        # The user wants the table to be simplified, so we'll update the query to only select name and price
         
         return jsonify({
             'message': 'Prices retrieved successfully',
@@ -1611,11 +1741,19 @@ def download_prices_excel():
         wb.save(excel_file)
         excel_file.seek(0)
         
+        # Use depot name for filename if provided
+        depot_name = data.get('depot_name', '').strip()
+        if depot_name:
+            safe_name = re.sub(r'[^\w\s-]', '', depot_name).strip().replace(' ', '_')
+            excel_filename = f'{safe_name}_prices_{datetime.now().strftime("%Y%m%d")}.xlsx'
+        else:
+            excel_filename = f'medicine_prices_{datetime.now().strftime("%Y%m%d")}.xlsx'
+        
         return send_file(
             excel_file,
             mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
             as_attachment=True,
-            download_name=f'medicine_prices_{datetime.now().strftime("%Y%m%d")}.xlsx'
+            download_name=excel_filename
         )
         
     except Exception as e:
@@ -2019,18 +2157,20 @@ def download_prices_pdf():
         elements.append(Spacer(1, 0.2*inch))
         
         # Prepare table data
-        table_data = [['Medicine Name', 'Unit Price (RWF)']]
+        table_data = [['Medicine Name', 'Unit Price (RWF)', 'Expiry Date']]
         for med in medicines:
             # Format price as integer (remove .00)
             price = med.get('unit_price', 0)
             price_formatted = f"{int(round(price))}"
+            expiry = med.get('expiry_date', '') or ''
             table_data.append([
                 med.get('medicine_name', ''),
-                price_formatted
+                price_formatted,
+                expiry
             ])
         
         # Create table
-        table = Table(table_data, colWidths=[4.5*inch, 1.5*inch])
+        table = Table(table_data, colWidths=[3.5*inch, 1.5*inch, 1.5*inch])
         table.setStyle(TableStyle([
             # Header row
             ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#3b82f6')),
@@ -2054,11 +2194,19 @@ def download_prices_pdf():
         doc.build(elements)
         pdf_file.seek(0)
         
+        # Use depot name for filename if provided
+        depot_name = data.get('depot_name', '').strip()
+        if depot_name:
+            safe_name = re.sub(r'[^\w\s-]', '', depot_name).strip().replace(' ', '_')
+            pdf_filename = f'{safe_name}_prices_{datetime.now().strftime("%Y%m%d")}.pdf'
+        else:
+            pdf_filename = f'medicine_prices_{datetime.now().strftime("%Y%m%d")}.pdf'
+        
         return send_file(
             pdf_file,
             mimetype='application/pdf',
             as_attachment=True,
-            download_name=f'medicine_prices_{datetime.now().strftime("%Y%m%d")}.pdf'
+            download_name=pdf_filename
         )
         
     except Exception as e:

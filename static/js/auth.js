@@ -14,6 +14,7 @@ function getToken() {
 function removeToken() {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
+    localStorage.removeItem('tenant');
 }
 
 function setUser(user) {
@@ -23,6 +24,23 @@ function setUser(user) {
 function getUser() {
     const userStr = localStorage.getItem('user');
     return userStr ? JSON.parse(userStr) : null;
+}
+
+function setTenant(tenant) {
+    if (tenant) {
+        localStorage.setItem('tenant', JSON.stringify(tenant));
+    }
+}
+
+function getTenant() {
+    const tenantStr = localStorage.getItem('tenant');
+    return tenantStr ? JSON.parse(tenantStr) : null;
+}
+
+function getDepotName() {
+    const tenant = getTenant();
+    return tenant ? (tenant.business_name || '') : '';
+}
 }
 
 // API request helper
@@ -110,6 +128,7 @@ async function login(email, password) {
     
     setToken(data.token);
     setUser(data.user);
+    setTenant(data.tenant);
     
     return data;
 }

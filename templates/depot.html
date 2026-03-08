@@ -517,9 +517,12 @@
                 <div class="card">
                     <div class="card-header">
                         <h3>Your Products</h3>
-                        <div style="display: flex; gap: 12px;">
+                        <div style="display: flex; gap: 12px; align-items: center;">
                             <input type="text" id="product-search" class="form-input" placeholder="🔍 Search medicines..." style="width: 300px;">
                             <button class="btn btn-primary" onclick="searchProducts()">Search</button>
+                            <button class="btn btn-secondary" onclick="exportAllProducts('csv')">⬇️ CSV</button>
+                            <button class="btn btn-secondary" onclick="exportAllProducts('excel')">⬇️ Excel</button>
+                            <button class="btn btn-secondary" onclick="exportAllProducts('pdf')">⬇️ PDF</button>
                         </div>
                     </div>
                     <div id="products-list" class="loading">
