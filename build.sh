@@ -3,9 +3,13 @@
 
 set -o errexit
 
-echo "=== Installing system packages ==="
-apt-get update -qq
-apt-get install -y -qq poppler-utils tesseract-ocr libpq-dev build-essential libffi-dev libjpeg-dev zlib1g-dev libfreetype6-dev
+echo "=== Installing system packages (if available) ==="
+if command -v apt-get &> /dev/null && [ -w /var/lib/apt/lists ]; then
+  apt-get update -qq
+  apt-get install -y -qq poppler-utils tesseract-ocr libpq-dev build-essential libffi-dev libjpeg-dev zlib1g-dev libfreetype6-dev
+else
+  echo "Skipping apt-get (read-only filesystem or not available)"
+fi
 
 echo "=== Upgrading pip ==="
 pip install --upgrade pip setuptools wheel
