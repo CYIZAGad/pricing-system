@@ -110,31 +110,15 @@ def upload_price_list():
             
             # Insert/Update medicines - check by name across ALL price lists
             # If medicine exists anywhere, update it; otherwise insert new
-            # Handle duplicates in the same file by using the first occurrence
+            # Allow all records including duplicates (different batches/prices)
             updated_count = 0
             inserted_count = 0
-            processed_medicines = {}  # Track medicines already processed in this upload
+            skipped_count = 0
             
             for record in valid_records:
                 medicine_name = record['medicine_name'].strip()
                 unit_price = record['unit_price']
-                expiry_date = record.get('expiry_date')
-                
-                # Validate expiry_date is present
-                if not expiry_date:
-                    logger.warning(f"Row missing expiry_date for '{medicine_name}' - skipping")
-                    continue
-                
-                # Normalize medicine name for duplicate detection
-                medicine_key = medicine_name.lower().strip()
-                
-                # If we've already processed this medicine in this file, skip it (use first occurrence)
-                if medicine_key in processed_medicines:
-                    logger.info(f"Skipping duplicate '{medicine_name}' in upload (already processed with price {processed_medicines[medicine_key]})")
-                    continue
-                
-                # Mark as processed
-                processed_medicines[medicine_key] = unit_price
+                expiry_date = record.get('expiry_date')  # May be None
                 
                 # Check if medicine with this name exists anywhere in the database
                 check_result = tenant_session.execute(
@@ -199,7 +183,7 @@ def upload_price_list():
                     inserted_count += 1
                     logger.info(f"Inserted new medicine '{medicine_name}' with price {unit_price}, expiry_date: {expiry_date}")
             
-            logger.info(f"Upload summary: {updated_count} updated, {inserted_count} inserted, {len(processed_medicines)} unique medicines processed")
+            logger.info(f"Upload summary: {updated_count} updated, {inserted_count} inserted, {skipped_count} skipped")
             
             # Update price list status
             tenant_session.execute(

@@ -89,11 +89,14 @@ class FileProcessor:
                 if expiry_col:
                     column_map[expiry_col] = 'expiry_date'
             
-            # Validate required columns (name, price, and expiry_date required)
-            required = ['medicine_name', 'unit_price', 'expiry_date']
+            # Validate required columns (name and price required; expiry_date optional)
+            required = ['medicine_name', 'unit_price']
             missing = [col for col in required if col not in column_map.values()]
             if missing:
                 raise ValueError(f"Missing required columns: {missing}. Found columns: {list(df.columns)}")
+            
+            if 'expiry_date' not in column_map.values():
+                self.warnings.append('No expiry_date column found — expiry dates will be set to NULL')
             
             # Process rows
             valid_records = []
@@ -337,7 +340,7 @@ class FileProcessor:
         # Find column for each field
         reverse_map = {v: k for k, v in column_map.items()}
         
-        # Required fields: name, price, and expiry_date
+        # Required fields: name and price (expiry_date is optional)
         medicine_name = self._get_value(row, reverse_map.get('medicine_name'))
         unit_price = self._get_value(row, reverse_map.get('unit_price'))
         expiry_date = self._get_value(row, reverse_map.get('expiry_date'))
@@ -348,9 +351,6 @@ class FileProcessor:
         if unit_price is None or pd.isna(unit_price):
             raise ValueError("Unit price is required")
         
-        if expiry_date is None or pd.isna(expiry_date):
-            raise ValueError("Expiry date is required")
-        
         try:
             unit_price = float(unit_price)
             if unit_price <= 0:
@@ -358,19 +358,20 @@ class FileProcessor:
         except (ValueError, TypeError):
             raise ValueError(f"Invalid unit price: {unit_price}")
         
-        # Parse expiry date
-        try:
-            if isinstance(expiry_date, str):
+        # Parse expiry date (optional — NULL if missing or invalid)
+        if expiry_date is not None and not pd.isna(expiry_date):
+            try:
                 parsed_date = pd.to_datetime(expiry_date, errors='coerce')
-            else:
-                parsed_date = pd.to_datetime(expiry_date, errors='coerce')
-            
-            if pd.isna(parsed_date):
-                raise ValueError(f"Invalid expiry date format: {expiry_date}")
-            
-            record['expiry_date'] = parsed_date.date().isoformat()
-        except Exception as e:
-            raise ValueError(f"Invalid expiry date: {expiry_date}. Error: {str(e)}")
+                if pd.isna(parsed_date):
+                    self.warnings.append(f"Row {row_num}: invalid expiry date '{expiry_date}' — set to NULL")
+                    record['expiry_date'] = None
+                else:
+                    record['expiry_date'] = parsed_date.date().isoformat()
+            except Exception:
+                self.warnings.append(f"Row {row_num}: could not parse expiry date '{expiry_date}' — set to NULL")
+                record['expiry_date'] = None
+        else:
+            record['expiry_date'] = None
         
         record['medicine_name'] = str(medicine_name).strip()
         record['unit_price'] = float(unit_price)
