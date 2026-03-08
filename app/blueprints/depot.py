@@ -1177,11 +1177,9 @@ def get_statistics():
                 SELECT 
                     COUNT(DISTINCT m.id) as total_medicines,
                     COUNT(DISTINCT pl.id) as total_uploads,
-                    COUNT(DISTINCT CASE WHEN pl.status = 'active' THEN pl.id END) as active_price_lists,
-                    COUNT(DISTINCT dl.id) as download_count
+                    COUNT(DISTINCT CASE WHEN pl.status = 'active' THEN pl.id END) as active_price_lists
                 FROM medicines m
                 LEFT JOIN price_lists pl ON m.price_list_id = pl.id
-                LEFT JOIN download_logs dl ON dl.price_list_id = pl.id
                 WHERE pl.tenant_id = :tenant_id
             """),
             {'tenant_id': tenant_id}
@@ -1193,8 +1191,7 @@ def get_statistics():
         return jsonify({
             'total_medicines': stats.total_medicines or 0,
             'total_uploads': stats.total_uploads or 0,
-            'active_price_list': stats.active_price_lists or 0,
-            'download_count': stats.download_count or 0
+            'active_price_list': stats.active_price_lists or 0
         }), 200
         
     except Exception as e:
