@@ -151,7 +151,7 @@ class TenantDatabaseCreator:
                 price_list_id UUID NOT NULL,
                 medicine_name VARCHAR(200) NOT NULL,
                 unit_price DECIMAL(10,2) NOT NULL CHECK (unit_price > 0),
-                expiry_date DATE NOT NULL,
+                expiry_date DATE,
                 last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 is_active BOOLEAN DEFAULT TRUE,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
