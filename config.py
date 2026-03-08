@@ -4,6 +4,7 @@ Configuration settings for the Pharmacy Pricing System
 
 import os
 import secrets as _secrets
+from urllib.parse import urlparse
 from dotenv import load_dotenv
 
 # Load .env file (if exists)
@@ -24,6 +25,28 @@ def _require_env(key, fallback=None):
     return fallback or _secrets.token_hex(32)
 
 
+def _parse_database_url():
+    """Parse DATABASE_URL into individual components if available."""
+    url = os.environ.get('DATABASE_URL', '')
+    if not url:
+        return None
+    # Normalize postgres:// to postgresql://
+    if url.startswith('postgres://'):
+        url = url.replace('postgres://', 'postgresql://', 1)
+    parsed = urlparse(url)
+    return {
+        'host': parsed.hostname or 'localhost',
+        'port': str(parsed.port or 5432),
+        'name': (parsed.path or '/pricing_central').lstrip('/'),
+        'user': parsed.username or 'postgres',
+        'password': parsed.password or 'postgres',
+    }
+
+
+# Pre-parse DATABASE_URL so all config fields are consistent
+_db_parts = _parse_database_url()
+
+
 class Config:
     """Base configuration"""
     FLASK_ENV = os.environ.get('FLASK_ENV', 'development')
@@ -32,12 +55,12 @@ class Config:
     JWT_ACCESS_TOKEN_EXPIRES = 86400  # 24 hours
     JWT_REFRESH_TOKEN_EXPIRES = 604800  # 7 days
     
-    # Central Database (pre-existing, imported)
-    CENTRAL_DB_HOST = os.environ.get('CENTRAL_DB_HOST') or 'localhost'
-    CENTRAL_DB_PORT = os.environ.get('CENTRAL_DB_PORT') or '5432'
-    CENTRAL_DB_NAME = os.environ.get('CENTRAL_DB_NAME') or 'pricing_central'
-    CENTRAL_DB_USER = os.environ.get('CENTRAL_DB_USER') or 'postgres'
-    CENTRAL_DB_PASSWORD = os.environ.get('CENTRAL_DB_PASSWORD') or 'postgres'
+    # Central Database — parsed from DATABASE_URL when available
+    CENTRAL_DB_HOST = os.environ.get('CENTRAL_DB_HOST') or (_db_parts['host'] if _db_parts else 'localhost')
+    CENTRAL_DB_PORT = os.environ.get('CENTRAL_DB_PORT') or (_db_parts['port'] if _db_parts else '5432')
+    CENTRAL_DB_NAME = os.environ.get('CENTRAL_DB_NAME') or (_db_parts['name'] if _db_parts else 'pricing_central')
+    CENTRAL_DB_USER = os.environ.get('CENTRAL_DB_USER') or (_db_parts['user'] if _db_parts else 'postgres')
+    CENTRAL_DB_PASSWORD = os.environ.get('CENTRAL_DB_PASSWORD') or (_db_parts['password'] if _db_parts else 'postgres')
     
     # PostgreSQL Admin (for creating tenant databases)
     PG_ADMIN_USER = os.environ.get('PG_ADMIN_USER') or CENTRAL_DB_USER
@@ -77,4 +100,5 @@ class Config:
     @staticmethod
     def get_tenant_db_uri(tenant_db_name):
         """Get tenant database connection URI"""
+        # Use the same host/credentials derived from DATABASE_URL or individual env vars
         return f"postgresql://{Config.CENTRAL_DB_USER}:{Config.CENTRAL_DB_PASSWORD}@{Config.CENTRAL_DB_HOST}:{Config.CENTRAL_DB_PORT}/{tenant_db_name}"
