@@ -254,47 +254,6 @@ function formatPriceRWF(price) {
 let currentPage = 1;
 const itemsPerPage = 100;
 
-// Export All Products (from Products page)
-async function exportAllProducts(format) {
-    try {
-        const token = getToken();
-        const response = await fetch(`/api/v1/depot/export-all-medicines?format=${format}`, {
-            method: 'GET',
-            headers: {
-                'Authorization': `Bearer ${token}`
-            }
-        });
-        
-        if (!response.ok) {
-            const error = await response.json();
-            throw new Error(error.error || 'Export failed');
-        }
-        
-        const blob = await response.blob();
-        const url = window.URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-        // Extract filename from Content-Disposition header or use default
-        const disposition = response.headers.get('Content-Disposition');
-        let filename = `medicines.${format === 'excel' ? 'xlsx' : format}`;
-        if (disposition) {
-            const match = disposition.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/);
-            if (match && match[1]) {
-                filename = match[1].replace(/['"]/g, '');
-            }
-        }
-        link.download = filename;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        window.URL.revokeObjectURL(url);
-        
-        showAlert(`${format.toUpperCase()} file downloaded successfully`, 'success');
-    } catch (error) {
-        showAlert(`Export failed: ${error.message}`, 'error');
-    }
-}
-
 async function loadProducts(search = '', page = 1) {
     const container = document.getElementById('products-list');
     container.innerHTML = '<div class="spinner"></div><p>Loading products...</p>';
@@ -571,6 +530,10 @@ function downloadPricesCSV() {
         return;
     }
     
+    // Get depot name for filename
+    const tenant = JSON.parse(localStorage.getItem('tenant') || '{}');
+    const depotName = (tenant.business_name || 'medicine').replace(/[^\w\s-]/g, '').trim().replace(/\s+/g, '_');
+    
     // Create CSV content
     let csv = 'Medicine Name,Unit Price,Expiry Date\n';
     matchedMedicines.forEach(med => {
@@ -578,17 +541,12 @@ function downloadPricesCSV() {
         csv += `"${med.medicine_name}",${med.unit_price.toFixed(2)},${expiryDate}\n`;
     });
     
-    // Use depot name in filename
-    const depotName = (typeof getDepotName === 'function') ? getDepotName() : '';
-    const safeName = depotName ? depotName.replace(/[^\w\s-]/g, '').trim().replace(/\s+/g, '_') : 'medicine';
-    const fileName = `${safeName}_prices_${new Date().toISOString().split('T')[0]}.csv`;
-    
     // Create download link
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');
     const url = URL.createObjectURL(blob);
     link.setAttribute('href', url);
-    link.setAttribute('download', fileName);
+    link.setAttribute('download', `${depotName}_prices_${new Date().toISOString().split('T')[0]}.csv`);
     link.style.visibility = 'hidden';
     document.body.appendChild(link);
     link.click();
@@ -605,7 +563,6 @@ async function downloadPricesExcel() {
     }
     
     try {
-        const depotName = (typeof getDepotName === 'function') ? getDepotName() : '';
         // Send request to backend to generate Excel file
         const token = getToken();
         const response = await fetch('/api/v1/depot/download-prices-excel', {
@@ -616,7 +573,7 @@ async function downloadPricesExcel() {
             },
             body: JSON.stringify({
                 medicines: matchedMedicines,
-                depot_name: depotName
+                depot_name: (JSON.parse(localStorage.getItem('tenant') || '{}')).business_name || ''
             })
         });
         
@@ -630,8 +587,14 @@ async function downloadPricesExcel() {
         const url = window.URL.createObjectURL(blob);
         const link = document.createElement('a');
         link.href = url;
-        const safeName = depotName ? depotName.replace(/[^\w\s-]/g, '').trim().replace(/\s+/g, '_') : 'medicine';
-        link.download = `${safeName}_prices_${new Date().toISOString().split('T')[0]}.xlsx`;
+        // Use filename from server response
+        const disposition = response.headers.get('Content-Disposition');
+        let filename = `medicine_prices_${new Date().toISOString().split('T')[0]}.xlsx`;
+        if (disposition) {
+            const match = disposition.match(/filename[^;=\n]*=(['"]?)([^'"\n;]*)/); 
+            if (match && match[2]) filename = match[2];
+        }
+        link.download = filename;
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
@@ -1464,7 +1427,6 @@ async function downloadPricesPDF() {
     }
     
     try {
-        const depotName = (typeof getDepotName === 'function') ? getDepotName() : '';
         const token = getToken();
         const response = await fetch('/api/v1/depot/download-prices-pdf', {
             method: 'POST',
@@ -1474,7 +1436,7 @@ async function downloadPricesPDF() {
             },
             body: JSON.stringify({
                 medicines: matchedMedicines,
-                depot_name: depotName
+                depot_name: (JSON.parse(localStorage.getItem('tenant') || '{}')).business_name || ''
             })
         });
         
@@ -1488,8 +1450,14 @@ async function downloadPricesPDF() {
         const url = window.URL.createObjectURL(blob);
         const link = document.createElement('a');
         link.href = url;
-        const safeName = depotName ? depotName.replace(/[^\w\s-]/g, '').trim().replace(/\s+/g, '_') : 'medicine';
-        link.download = `${safeName}_prices_${new Date().toISOString().split('T')[0]}.pdf`;
+        // Use filename from server response
+        const disposition = response.headers.get('Content-Disposition');
+        let filename = `medicine_prices_${new Date().toISOString().split('T')[0]}.pdf`;
+        if (disposition) {
+            const match = disposition.match(/filename[^;=\n]*=(['"]?)([^'"\n;]*)/); 
+            if (match && match[2]) filename = match[2];
+        }
+        link.download = filename;
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);

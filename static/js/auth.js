@@ -26,23 +26,6 @@ function getUser() {
     return userStr ? JSON.parse(userStr) : null;
 }
 
-function setTenant(tenant) {
-    if (tenant) {
-        localStorage.setItem('tenant', JSON.stringify(tenant));
-    }
-}
-
-function getTenant() {
-    const tenantStr = localStorage.getItem('tenant');
-    return tenantStr ? JSON.parse(tenantStr) : null;
-}
-
-function getDepotName() {
-    const tenant = getTenant();
-    return tenant ? (tenant.business_name || '') : '';
-}
-}
-
 // API request helper
 async function apiRequest(endpoint, options = {}) {
     const token = getToken();
@@ -128,7 +111,9 @@ async function login(email, password) {
     
     setToken(data.token);
     setUser(data.user);
-    setTenant(data.tenant);
+    if (data.tenant) {
+        localStorage.setItem('tenant', JSON.stringify(data.tenant));
+    }
     
     return data;
 }
